@@ -1,4 +1,4 @@
-# Disklavear - Yamaha FIL to MIDI Converter
+# Disklavier - Yamaha FIL to MIDI Converter
 
 Tools for converting Yamaha Disklavier FIL files to standard MIDI format.
 

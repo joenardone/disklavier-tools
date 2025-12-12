@@ -5,14 +5,14 @@ This project provides a simple packaging script (`pack.ps1` and `pack.bat`) that
 Quick steps (PowerShell):
 
 ```powershell
-cd C:\Users\josep\OneDrive\Documents\Projects\Disklavear
+cd C:\Users\josep\OneDrive\Documents\Projects\Disklavier
 ./pack.ps1
 ```
 
 Or in cmd.exe:
 
 ```bat
-cd C:\Users\josep\OneDrive\Documents\Projects\Disklavear
+cd C:\Users\josep\OneDrive\Documents\Projects\Disklavier
 pack.bat
 ```
 
