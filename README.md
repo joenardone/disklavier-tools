@@ -104,6 +104,74 @@ Cleans filenames by replacing Unicode characters and illegal characters with saf
 - ✅ Preserves: `Für Elise` (Unicode letters kept)
 - ✅ Cleans: `Song: Title` → `Song- Title` (illegal chars)
 
+### patch_dkvsong_coverart.exe
+Patches Yamaha DKC-900 `.dkvsong.db` to register album cover art for user albums.
+
+**Purpose:**
+The DKC-900 only auto-registers artwork for Downloaded Songs. User albums stored in `Albums/` need explicit database entries for `cover.jpg` to display.
+
+**Usage:**
+```powershell
+# Patch database at USB root
+.\dist\patch_dkvsong_coverart.exe .dkvsong.db
+
+# Dry run to preview changes
+.\dist\patch_dkvsong_coverart.exe --dry-run .dkvsong.db
+
+# Custom albums folder name
+.\dist\patch_dkvsong_coverart.exe --albums-folder MyAlbums .dkvsong.db
+```
+
+**Features:**
+- Creates timestamped backup automatically
+- Scans for albums with `cover.jpg` but no registered artwork
+- Updates database to reference existing cover.jpg files
+- Safe rollback via backup file
+- Dry-run mode to preview changes
+
+**Requirements:**
+- USB drive with `.dkvsong.db` at root
+- Album folders under `Albums/` with `cover.jpg` files
+
+### normalize_coverart.exe
+Normalizes album cover art to 265x265 pixels for Yamaha DKC-900.
+
+**Purpose:**
+Yamaha Downloaded Songs use 265x265 JPEG artwork. This tool normalizes all album artwork to match that format for consistent display and faster loading.
+
+**Usage:**
+```powershell
+# Normalize all cover.jpg in Albums folder
+.\dist\normalize_coverart.exe Albums
+
+# Dry run to preview changes
+.\dist\normalize_coverart.exe --dry-run Albums
+
+# Custom size
+.\dist\normalize_coverart.exe --size 300 Albums
+
+# Don't recurse into subdirectories
+.\dist\normalize_coverart.exe --no-recursive Albums
+```
+
+**Features:**
+- Center-crops to square (preserves aspect ratio)
+- Resizes to 265x265 pixels (DKC-900 standard)
+- Respects EXIF rotation
+- Creates backup as `cover.original.jpg`
+- Saves as optimized baseline JPEG
+- Dry-run mode to preview changes
+
+**Requirements:**
+- Python Pillow library: `pip install pillow`
+- Album folders containing `cover.jpg` files
+
+**Recommended Workflow:**
+1. Prepare albums with `cover.jpg` files
+2. Run `normalize_coverart.exe` to resize images
+3. Run `patch_dkvsong_coverart.exe` to update database
+4. Eject USB and insert into DKC-900
+
 ## File Format
 
 ### Yamaha ESEQ (.fil)
@@ -120,14 +188,17 @@ Executables are built using PyInstaller:
 .\pack.ps1
 ```
 
-This builds all three executables:
+This builds all executables:
 - fil2mid.exe
 - mid_title_from_filename.exe  
 - clean_filenames.exe
+- patch_dkvsong_coverart.exe
+- normalize_coverart.exe
 
 ## Requirements
 
 - Python 3.12+
-- mido
+- mido (MIDI file handling)
+- pillow (image processing for cover art tools)
 - python-rtmidi (optional, for MIDI playback)
 - pyinstaller (for building executables)

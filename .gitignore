@@ -12,7 +12,7 @@ venv/
 ENV/
 
 # PyInstaller
-*.spec
+# *.spec files are tracked for building executables
 
 # Test files
 samples/test_*/

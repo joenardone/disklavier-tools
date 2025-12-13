@@ -28,12 +28,12 @@ if (-not $SkipInstall) {
     else {
         if ($AutoCreateRequirements) {
             Write-Host "requirements.txt not found; auto-creating default requirements at $req"
-            @("mido","python-rtmidi","pyinstaller") | Out-File -FilePath $req -Encoding UTF8
+            @("mido","pillow","python-rtmidi","pyinstaller") | Out-File -FilePath $req -Encoding UTF8
             Write-Host "Created requirements.txt with default packages"
             & $python -m pip install -r $req
         } else {
             Write-Host "requirements.txt not found in repo root; installing default packages"
-            & $python -m pip install --upgrade pip setuptools wheel pyinstaller mido python-rtmidi
+            & $python -m pip install --upgrade pip setuptools wheel pyinstaller mido pillow python-rtmidi
         }
     }
 }
@@ -44,12 +44,26 @@ if (-not (Test-Path $scriptFile)) {
     Write-Error "Script file '$scriptFile' does not exist. Verify the project root or move tools/convert_fil_to_mid.py into the project."
     exit 1
 }
-Write-Host "Building fil2mid.exe using venv python: $python"
-& $python -m PyInstaller --onefile --name fil2mid --console $scriptFile
+Write-Host "`nBuilding executables..."
 
-if (Test-Path "dist\fil2mid.exe") {
-    Write-Host "Built:" (Resolve-Path "dist\fil2mid.exe")
-} else {
-    Write-Error "Build failed. Check PyInstaller output for missing modules or errors."
-    exit 1
+$specs = @(
+    "fil2mid.spec",
+    "mid_title_from_filename.spec",
+    "clean_filenames.spec",
+    "patch_dkvsong_coverart.spec",
+    "normalize_coverart.spec"
+)
+
+foreach ($spec in $specs) {
+    $specPath = Join-Path $ProjectRoot $spec
+    if (Test-Path $specPath) {
+        Write-Host "`nBuilding $spec..."
+        & $python -m PyInstaller --clean $specPath
+    } else {
+        Write-Warning "Spec file not found: $spec"
+    }
 }
+
+Write-Host "`n=== Build Complete ==="
+Write-Host "Executables in dist/:"
+Get-ChildItem "dist\*.exe" | ForEach-Object { Write-Host "  - $($_.Name)" }
