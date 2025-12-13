@@ -1,6 +1,8 @@
-# Disklavier - Yamaha FIL to MIDI Converter
+# Disklavier Tools
 
-Tools for converting Yamaha Disklavier FIL files to standard MIDI format.
+Utilities for working with Yamaha Disklavier and DKC-900 systems, including FIL to MIDI conversion, audio processing, and album management.
+
+**Credits:** Special thanks to [Alexander Peppe](https://www.alexanderpeppe.com/) for assistance with DKC-900 tools and workflows.
 
 ## Tools
 
@@ -172,6 +174,51 @@ Yamaha Downloaded Songs use 265x265 JPEG artwork. This tool normalizes all album
 3. Run `patch_dkvsong_coverart.exe` to update database
 4. Eject USB and insert into DKC-900
 
+### wav_to_mp3.exe
+Converts WAV audio files to MP3 with optional metadata and cover art copying.
+
+**Purpose:**
+The DKC-900 requires MP3 format for audio playback with metadata. This tool provides batch WAV to MP3 conversion with DKC-900-compatible settings.
+
+**Usage:**
+```powershell
+# Convert all WAV files in current directory
+.\dist\wav_to_mp3.exe .
+
+# Convert with metadata from tagged MP3 files
+.\dist\wav_to_mp3.exe --metadata-dir tags .
+
+# Add suffix to output files
+.\dist\wav_to_mp3.exe --suffix _SYNC .
+
+# Output to different directory
+.\dist\wav_to_mp3.exe --output-dir output_mp3 input_wav
+
+# Custom bitrate
+.\dist\wav_to_mp3.exe --bitrate 320 .
+
+# Dry run to preview
+.\dist\wav_to_mp3.exe --dry-run .
+```
+
+**Features:**
+- Batch WAV to MP3 conversion
+- Copies metadata (title, artist, album, track) from tagged MP3 files
+- Copies embedded cover art from tagged MP3 files  
+- DKC-900 compatible settings (44.1kHz, stereo, ID3v2.3)
+- Configurable bitrate and sample rate
+- Dry-run mode to preview conversions
+
+**Requirements:**
+- FFmpeg installed and in PATH
+- Download from: https://ffmpeg.org/download.html
+
+**Metadata Copying Workflow:**
+1. Convert WAV files: `wav_to_mp3.exe .`
+2. Tag MP3 files with metadata using your preferred tool
+3. Place tagged MP3s in `tags/` subdirectory
+4. Re-run with metadata: `wav_to_mp3.exe --metadata-dir tags --overwrite .`
+
 ## File Format
 
 ### Yamaha ESEQ (.fil)
@@ -194,6 +241,7 @@ This builds all executables:
 - clean_filenames.exe
 - patch_dkvsong_coverart.exe
 - normalize_coverart.exe
+- wav_to_mp3.exe
 
 ## Requirements
 
@@ -202,3 +250,4 @@ This builds all executables:
 - pillow (image processing for cover art tools)
 - python-rtmidi (optional, for MIDI playback)
 - pyinstaller (for building executables)
+- FFmpeg (for wav_to_mp3.exe) - https://ffmpeg.org/download.html
