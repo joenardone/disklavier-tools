@@ -145,7 +145,7 @@ Examples:
 Note: Original images are backed up as cover.original.jpg
         """
     )
-    parser.add_argument('directory', help='directory containing album folders with cover.jpg files')
+    parser.add_argument('directory', nargs='?', default='.', help='directory containing album folders with cover.jpg files (default: current directory)')
     parser.add_argument('--size', type=int, default=265,
                        help='target size in pixels (square: SIZExSIZE, default: 265)')
     parser.add_argument('--quality', type=int, default=88,

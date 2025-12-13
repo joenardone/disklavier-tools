@@ -323,7 +323,7 @@ def events_to_midi(events, ticks_per_unit=1, force_channel: int | None = None, t
 def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog='fil2mid', description='Convert Yamaha .fil (base64) to .mid')
     parser.add_argument('--version', action='version', version='fil2mid 0.2')
-    parser.add_argument('input', help='input .fil or .fil.b64 file path, or directory')
+    parser.add_argument('input', nargs='?', default='.', help='input .fil or .fil.b64 file path, or directory (default: current directory)')
     parser.add_argument('output', nargs='?', default=None, help='output .mid file path or output directory when input is a directory')
     parser.add_argument('--recursive', action='store_true', help='recurse into directories to find .fil/.fil.b64 files')
     parser.add_argument('--ticks-per-unit', type=float, default=0.82, help='scaling factor from FIL delta to MIDI ticks')

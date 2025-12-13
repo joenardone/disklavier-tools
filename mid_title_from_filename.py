@@ -81,7 +81,7 @@ def get_parser() -> argparse.ArgumentParser:
         description='Update MIDI file title metadata to match filename (without extension)'
     )
     parser.add_argument('--version', action='version', version='mid_title_from_filename 0.1')
-    parser.add_argument('input', help='input .mid file path or directory containing .mid files')
+    parser.add_argument('input', nargs='?', default='.', help='input .mid file path or directory containing .mid files (default: current directory)')
     parser.add_argument('--recursive', action='store_true', help='recurse into subdirectories to find .mid files')
     parser.add_argument('--dry-run', action='store_true', help='show what would be changed without modifying files')
     return parser

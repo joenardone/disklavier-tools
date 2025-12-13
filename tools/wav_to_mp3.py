@@ -240,8 +240,8 @@ DKC-900 Compatible Settings:
         """
     )
     
-    parser.add_argument('directory', 
-                       help='directory containing WAV files')
+    parser.add_argument('directory', nargs='?', default='.',
+                       help='directory containing WAV files (default: current directory)')
     parser.add_argument('--output-dir', 
                        help='output directory (default: same as input)')
     parser.add_argument('--metadata-dir',

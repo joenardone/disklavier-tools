@@ -174,7 +174,7 @@ def get_parser() -> argparse.ArgumentParser:
         description='Clean filenames by replacing Unicode and illegal characters with ASCII equivalents'
     )
     parser.add_argument('--version', action='version', version='clean_filenames 0.1')
-    parser.add_argument('path', help='directory to process')
+    parser.add_argument('path', nargs='?', default='.', help='directory to process (default: current directory)')
     parser.add_argument('--recursive', action='store_true', help='process subdirectories recursively')
     parser.add_argument('--dry-run', action='store_true', help='show what would be changed without modifying files')
     parser.add_argument('--dirs-only', action='store_true', help='only rename directories, not files')
