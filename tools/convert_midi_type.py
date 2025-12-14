@@ -20,7 +20,7 @@ from pathlib import Path
 import sys
 
 
-def convert_to_type0(input_path, output_path=None, backup=True):
+def convert_to_type0(input_path, output_path=None, backup=True, force=False):
     """
     Convert a MIDI file to Type 0 (single track).
     
@@ -28,9 +28,10 @@ def convert_to_type0(input_path, output_path=None, backup=True):
         input_path: Path to input MIDI file
         output_path: Path to output file (if None, overwrites input)
         backup: If True and overwriting, create .backup file
+        force: If True, convert even if file has multiple tracks
     
     Returns:
-        True if conversion was performed, False if already Type 0
+        True if conversion was performed, False if already Type 0, None if skipped due to multi-track
     """
     try:
         mid = mido.MidiFile(input_path)
@@ -38,6 +39,12 @@ def convert_to_type0(input_path, output_path=None, backup=True):
         # Check if already Type 0
         if mid.type == 0:
             return False
+        
+        # Check for multiple tracks and warn
+        if len(mid.tracks) > 1 and not force:
+            print(f"⚠ Warning: {input_path} has {len(mid.tracks)} tracks")
+            print(f"  Skipping to preserve track structure. Use --force to convert anyway.")
+            return None
         
         # Create new Type 0 file with same ticks_per_beat
         new_mid = mido.MidiFile(type=0, ticks_per_beat=mid.ticks_per_beat)
@@ -91,13 +98,14 @@ def process_file(file_path, args):
     else:
         output_path = None
     
-    converted = convert_to_type0(file_path, output_path, backup=not args.no_backup)
+    converted = convert_to_type0(file_path, output_path, backup=not args.no_backup, force=args.force)
     
     if converted:
         print(f"✓ Converted: {file_path}")
-    else:
+    elif converted is False:
         if args.verbose:
             print(f"  Skipped (already Type 0): {file_path}")
+    # If converted is None, already printed warning about multi-track
 
 
 def process_directory(dir_path, args):
@@ -112,23 +120,26 @@ def process_directory(dir_path, args):
     
     converted_count = 0
     skipped_count = 0
+    multitrack_count = 0
     error_count = 0
     
     for midi_file in midi_files:
         try:
-            converted = convert_to_type0(midi_file, backup=not args.no_backup)
+            converted = convert_to_type0(midi_file, backup=not args.no_backup, force=args.force)
             if converted:
                 converted_count += 1
                 print(f"✓ Converted: {midi_file}")
-            else:
+            elif converted is False:
                 skipped_count += 1
                 if args.verbose:
                     print(f"  Skipped (already Type 0): {midi_file}")
+            else:  # None = multi-track warning
+                multitrack_count += 1
         except Exception as e:
             error_count += 1
             print(f"✗ Error: {midi_file}: {e}", file=sys.stderr)
     
-    print(f"\nSummary: {converted_count} converted, {skipped_count} skipped, {error_count} errors")
+    print(f"\nSummary: {converted_count} converted, {skipped_count} skipped, {multitrack_count} multi-track warnings, {error_count} errors")
 
 
 def main():
@@ -153,6 +164,8 @@ Examples:
                         help='Process directories recursively')
     parser.add_argument('--no-backup', action='store_true',
                         help='Do not create backup files when overwriting')
+    parser.add_argument('-f', '--force', action='store_true',
+                        help='Convert multi-track files (merges all tracks)')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Verbose output (show skipped files)')
     
