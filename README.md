@@ -174,6 +174,43 @@ Yamaha Downloaded Songs use 265x265 JPEG artwork. This tool normalizes all album
 3. Run `patch_dkvsong_coverart.exe` to update database
 4. Eject USB and insert into DKC-900
 
+### convert_midi_type.exe
+Converts MIDI files from Type 1 (multi-track) to Type 0 (single track).
+
+**Purpose:**
+Type 0 is the standard format for Disklavier solo piano files and is required for proper album organization on DKC-900. Use this tool to convert previously-converted files to the correct format.
+
+**Usage:**
+```powershell
+# Convert all MIDI files in current directory
+.\dist\convert_midi_type.exe
+
+# Convert single file
+.\dist\convert_midi_type.exe "song.mid"
+
+# Convert directory recursively
+.\dist\convert_midi_type.exe --recursive "C:\Music\MIDI"
+
+# Convert without creating backups
+.\dist\convert_midi_type.exe --no-backup .
+
+# Verbose output (show skipped files)
+.\dist\convert_midi_type.exe --verbose .
+```
+
+**Features:**
+- Merges all tracks into a single track
+- Preserves all MIDI events and exact timing
+- Automatically creates `.backup` files
+- Skips files already in Type 0 format
+- Batch processing with summary statistics
+- Recursive directory scanning
+
+**Why Type 0:**
+- DKC-900 treats Type 0 and Type 1 differently for album organization
+- Yamaha's own .fil conversions create Type 0 files
+- Type 0 files appear correctly in the DKC-900 album view
+
 ### wav_to_mp3.exe
 Converts WAV audio files to MP3 with optional metadata and cover art copying.
 

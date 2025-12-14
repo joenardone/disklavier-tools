@@ -52,7 +52,8 @@ $specs = @(
     "clean_filenames.spec",
     "patch_dkvsong_coverart.spec",
     "normalize_coverart.spec",
-    "wav_to_mp3.spec"
+    "wav_to_mp3.spec",
+    "convert_midi_type.spec"
 )
 
 foreach ($spec in $specs) {
