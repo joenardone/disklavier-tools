@@ -239,7 +239,7 @@ def parse_fil(data: bytes):
 
 
 def events_to_midi(events, ticks_per_unit=1, force_channel: int | None = None, tempo: int = 500000, channel_map: dict | None = None, program_override: dict | None = None, title: str | None = None):
-    mid = mido.MidiFile()
+    mid = mido.MidiFile(type=0)  # Type 0 = single track (standard for Disklavier solo)
     track = mido.MidiTrack()
     mid.tracks.append(track)
     mid.ticks_per_beat = 384
