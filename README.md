@@ -107,24 +107,26 @@ Cleans filenames by replacing Unicode characters and illegal characters with saf
 - ✅ Cleans: `Song: Title` → `Song- Title` (illegal chars)
 
 ### patch_dkvsong_coverart.exe
-Patches Yamaha DKC-900 `.dkvsong.db` to register album cover art for user albums.
+Patches Yamaha DKC-900 `.dkvsong.db` to register album cover art for ALL albums with cover.jpg.
 
 **Purpose:**
-The DKC-900 only auto-registers artwork for Downloaded Songs. User albums stored in `Albums/` need explicit database entries for `cover.jpg` to display.
+The DKC-900 only auto-registers artwork for Downloaded Songs. User albums need explicit database entries for `cover.jpg` to display. This tool patches ALL albums in any location.
 
 **Usage:**
 ```powershell
-# Patch database at USB root
-.\dist\patch_dkvsong_coverart.exe .dkvsong.db
+# Copy exe to USB root and double-click (auto-finds .dkvsong.db)
+.\dist\patch_dkvsong_coverart.exe
+
+# Or specify database path
+.\dist\patch_dkvsong_coverart.exe D:\.dkvsong.db
 
 # Dry run to preview changes
-.\dist\patch_dkvsong_coverart.exe --dry-run .dkvsong.db
-
-# Custom albums folder name
-.\dist\patch_dkvsong_coverart.exe --albums-folder MyAlbums .dkvsong.db
+.\dist\patch_dkvsong_coverart.exe --dry-run
 ```
 
 **Features:**
+- Works on ALL albums, not just Albums/ folder
+- No arguments needed - auto-finds .dkvsong.db in current directory
 - Creates timestamped backup automatically
 - Scans for albums with `cover.jpg` but no registered artwork
 - Updates database to reference existing cover.jpg files
@@ -133,7 +135,7 @@ The DKC-900 only auto-registers artwork for Downloaded Songs. User albums stored
 
 **Requirements:**
 - USB drive with `.dkvsong.db` at root
-- Album folders under `Albums/` with `cover.jpg` files
+- Album folders with `cover.jpg` files (any location)
 
 ### normalize_coverart.exe
 Normalizes album cover art to 265x265 pixels for Yamaha DKC-900.

@@ -61,13 +61,11 @@ def patch_coverart(db_path, albums_folder="Albums", dry_run=False):
             raise SystemExit("ERROR: album table missing expected columns (album_path / coverart_path).")
 
         # Select albums where coverart_path is blank/null
-        pattern = f"{albums_folder}/%"
         rows = conn.execute("""
             SELECT rowid, album_path, coverart_path
             FROM album
-            WHERE album_path LIKE ?
-              AND (coverart_path IS NULL OR TRIM(coverart_path) = '')
-        """, (pattern,)).fetchall()
+            WHERE (coverart_path IS NULL OR TRIM(coverart_path) = '')
+        """).fetchall()
 
         print(f"\nAlbums needing cover art patch: {len(rows)}")
 
@@ -114,26 +112,27 @@ def patch_coverart(db_path, albums_folder="Albums", dry_run=False):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
-        description="Patch Yamaha DKC-900 .dkvsong.db to register album cover art",
+        description="Patch Yamaha DKC-900 .dkvsong.db to register album cover art for ALL albums with cover.jpg",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Patch database at USB root
+  # Patch database in current directory (auto-finds .dkvsong.db)
+  patch_dkvsong_coverart.exe
+  
+  # Patch specific database
   patch_dkvsong_coverart.exe /path/to/usb/.dkvsong.db
   
-  # Patch database in current directory
-  patch_dkvsong_coverart.exe .dkvsong.db
-  
   # Dry run to preview changes
-  patch_dkvsong_coverart.exe --dry-run .dkvsong.db
+  patch_dkvsong_coverart.exe --dry-run
   
-  # Custom albums folder name
-  patch_dkvsong_coverart.exe --albums-folder MyAlbums .dkvsong.db
+Note: This patches ALL albums with empty coverart_path, not just Albums/ folder.
+      Any album with cover.jpg in its directory will be registered.
         """
     )
-    parser.add_argument('database', help='path to .dkvsong.db file')
+    parser.add_argument('database', nargs='?', default='.dkvsong.db',
+                       help='path to .dkvsong.db file (default: .dkvsong.db in current directory)')
     parser.add_argument('--albums-folder', default='Albums', 
-                       help='name of albums folder (default: Albums)')
+                       help='name of albums folder (default: Albums - unused, kept for compatibility)')
     parser.add_argument('--dry-run', action='store_true',
                        help='preview changes without modifying database')
     
