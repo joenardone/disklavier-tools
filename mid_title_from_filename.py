@@ -32,8 +32,13 @@ def update_midi_title(midi_path: Path, dry_run: bool = False):
         # Validate it's a MIDI file
         mid = mido.MidiFile(midi_path)
     except Exception as e:
-        print(f"ERROR: {midi_path} is not a valid MIDI file: {e}")
+        print(f"ERROR: {midi_path.name} is not a valid MIDI file: {e}")
         return False
+    
+    # Check for type 0 with multiple tracks - this is invalid and cannot be saved
+    if mid.type == 0 and len(mid.tracks) > 1:
+        print(f"SKIP: {midi_path.name} (type 0 with {len(mid.tracks)} tracks - use convert_midi_type.exe to fix)")
+        return True  # Return True to not count as failure
     
     # Extract title from filename (without extension)
     new_title = midi_path.stem

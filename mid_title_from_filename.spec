@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['C:\\Users\\josep\\OneDrive\\Documents\\Projects\\Disklavier\\mid_title_from_filename.py'],
+    ['mid_title_from_filename.py'],
     pathex=[],
     binaries=[],
     datas=[],
