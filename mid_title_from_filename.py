@@ -75,7 +75,11 @@ def update_midi_title(midi_path: Path, dry_run: bool = False):
     
     # Save the file (unless dry run)
     if not dry_run:
-        mid.save(midi_path)
+        try:
+            mid.save(midi_path)
+        except Exception as e:
+            print(f"ERROR: Failed to save {midi_path.name}: {e}")
+            return False
     
     return True
 
