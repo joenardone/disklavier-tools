@@ -124,18 +124,24 @@ def main(argv=None):
     
     # Process files
     success_count = 0
-    fail_count = 0
+    failed_files = []
     
     for fp in sorted(files):
         if update_midi_title(fp, dry_run=args.dry_run):
             success_count += 1
         else:
-            fail_count += 1
+            failed_files.append(fp)
     
     # Summary
-    print(f"\nProcessed {len(files)} file(s): {success_count} successful, {fail_count} failed")
+    print(f"\nProcessed {len(files)} file(s): {success_count} successful, {len(failed_files)} failed")
     
-    return 0 if fail_count == 0 else 1
+    # Show failed files if any
+    if failed_files:
+        print(f"\nFailed files:")
+        for fp in failed_files:
+            print(f"  • {fp.name}")
+    
+    return 0 if len(failed_files) == 0 else 1
 
 
 if __name__ == '__main__':
