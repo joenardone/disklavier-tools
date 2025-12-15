@@ -1,0 +1,45 @@
+
+======================================================================
+File: samples\midi\01 - Angel Eyes.mid
+======================================================================
+Type: 0
+Number of tracks: 1
+Ticks per beat: 480
+
+Meta message types found: ['copyright', 'cue_marker', 'end_of_track', 'key_signature', 'sequencer_specific', 'set_tempo', 'text', 'time_signature', 'track_name']
+
+======================================================================
+META MESSAGES:
+======================================================================
+
+--- Track 0 ---
+  set_tempo: 600000 µs/beat (100.00 BPM)
+  time_signature: 4/4
+  sequencer_specific: (67, 113, 0, 1, 0, 1, 0) (hex: 43 71 00 01 00 01 00)
+  track_name: '01 - Angel Eyes'
+  copyright: '(P) 2008 Yamaha Corporation'
+  sequencer_specific: (67, 123, 0, 88, 70, 48, 50, 0, 27) (hex: 43 7B 00 58 46 30 32 00 1B)
+  text: 'XFhd:2008//:US:::1:no:Jim Brickman:::::'
+  text: 'XFln:L1:Angel Eyes:Jim Brickman::::'
+  cue_marker: '$Lyrc:0:288:L1'
+  key_signature: C
+  sequencer_specific: (67, 123, 12, 1, 0) (hex: 43 7B 0C 01 00)
+  sequencer_specific: (67, 113, 0, 0, 0, 65) (hex: 43 71 00 00 00 41)
+  set_tempo: 512820 µs/beat (117.00 BPM)
+  time_signature: 4/4
+  set_tempo: 363636 µs/beat (165.00 BPM)
+  end_of_track: MetaMessage('end_of_track', time=0)
+
+======================================================================
+
+======================================================================
+XF METADATA DETECTED:
+======================================================================
+  XG system marker: (67, 113, 0, 1, 0, 1, 0)
+  XF format marker: (67, 123, 0, 88, 70, 48, 50, 0, 27)
+  XF text: 'XFhd:2008//:US:::1:no:Jim Brickman:::::'
+  XF text: 'XFln:L1:Angel Eyes:Jim Brickman::::'
+  XF lyric marker: '$Lyrc:0:288:L1'
+  XG system marker: (67, 113, 0, 0, 0, 65)
+======================================================================
+

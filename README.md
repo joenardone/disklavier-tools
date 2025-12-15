@@ -253,7 +253,10 @@ The DKC-900 only auto-registers artwork for Downloaded Songs. User albums need e
 - Updates database to reference existing cover.jpg files
 - Safe rollback via backup file
 - Dry-run mode to preview changes
-- **Fixed: URL-decodes paths to handle special characters** (`Pop & Rock`, `Jazz & Blues`)
+
+⚠️ **IMPORTANT:** DKC-900 does NOT support ampersand `&` in folder names. Use hyphens instead:
+- ✅ `Jazz - Blues` NOT ❌ `Jazz & Blues`
+- ✅ `Pop - Rock` NOT ❌ `Pop & Rock`
 
 **Usage:**
 ```powershell
