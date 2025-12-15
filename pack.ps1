@@ -52,6 +52,8 @@ $specs = @(
     "clean_filenames.spec",
     "patch_dkvsong_coverart.spec",
     "normalize_coverart.spec",
+    "add_xf_solo_metadata.spec",
+    "embed_tags_metadata.spec",
     "wav_to_mp3.spec",
     "convert_midi_type.spec"
 )

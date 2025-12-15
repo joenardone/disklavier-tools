@@ -10,6 +10,7 @@ import shutil
 import sqlite3
 from datetime import datetime
 import argparse
+from urllib.parse import unquote
 
 
 def find_table(conn, name):
@@ -74,8 +75,10 @@ def patch_coverart(db_path, albums_folder="Albums", dry_run=False):
 
         for r in rows:
             album_path = r["album_path"]  # e.g. Albums/Jim Brickman - The Romance...
+            # URL-decode path (handles %20, %26, etc.) and convert to OS path
+            album_path_decoded = unquote(album_path)
             # cover.jpg is in the album directory (on disk)
-            cover_on_disk = os.path.join(usb_root, album_path.replace("/", os.sep), "cover.jpg")
+            cover_on_disk = os.path.join(usb_root, album_path_decoded.replace("/", os.sep), "cover.jpg")
 
             if os.path.isfile(cover_on_disk):
                 cover_db_path = album_path.rstrip("/") + "/cover.jpg"  # keep DB style with /

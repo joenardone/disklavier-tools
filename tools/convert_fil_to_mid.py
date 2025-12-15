@@ -238,7 +238,7 @@ def parse_fil(data: bytes):
     return events, fil_timebase, target_resolution, title
 
 
-def events_to_midi(events, ticks_per_unit=1, force_channel: int | None = None, tempo: int = 500000, channel_map: dict | None = None, program_override: dict | None = None, title: str | None = None):
+def events_to_midi(events, ticks_per_unit=1, force_channel: int | None = None, tempo: int = 500000, channel_map: dict | None = None, program_override: dict | None = None, title: str | None = None, add_xf_metadata: bool = True):
     mid = mido.MidiFile(type=0)  # Type 0 = single track (standard for Disklavier solo)
     track = mido.MidiTrack()
     mid.tracks.append(track)
@@ -248,6 +248,27 @@ def events_to_midi(events, ticks_per_unit=1, force_channel: int | None = None, t
         track.append(mido.MetaMessage('track_name', name=title, time=0))
     # Add tempo meta to the start of the track
     track.append(mido.MetaMessage('set_tempo', tempo=tempo, time=0))
+    
+    # Add XF Solo metadata for DKC-900 recognition (SMFSOLO format)
+    # Only add for Type 0 (single track) files
+    if add_xf_metadata and mid.type == 0:
+        from datetime import datetime
+        year = str(datetime.now().year)
+        
+        # Add copyright
+        track.append(mido.MetaMessage('copyright', text=f'(P) {year} Yamaha Corporation', time=0))
+        
+        # XF format marker (XF02 signature)
+        track.append(mido.MetaMessage('sequencer_specific', data=(67, 123, 0, 88, 70, 48, 50, 0, 27), time=0))
+        
+        # XG system marker
+        track.append(mido.MetaMessage('sequencer_specific', data=(67, 113, 0, 1, 0, 1, 0), time=0))
+        
+        # XG system on
+        track.append(mido.MetaMessage('sequencer_specific', data=(67, 113, 0, 0, 0, 65), time=0))
+        
+        # XF end marker
+        track.append(mido.MetaMessage('sequencer_specific', data=(67, 123, 12, 1, 0), time=0))
     # If program overrides present, insert program_change at time 0 for their channel(s)
     if program_override:
         for ch, pg in program_override.items():

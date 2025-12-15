@@ -63,7 +63,7 @@ def normalize_folder(root_dir, size=265, quality=88, dry_run=False, recursive=Tr
     errors = 0
 
     # Find all cover.jpg files
-    pattern = "**cover.jpg" if recursive else "cover.jpg"
+    pattern = "**/cover.jpg" if recursive else "cover.jpg"
     cover_files = list(root_path.glob(pattern))
     
     # Case-insensitive search for Windows
