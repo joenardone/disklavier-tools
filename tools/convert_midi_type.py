@@ -115,9 +115,10 @@ def process_file(file_path, args):
 
 def process_directory(dir_path, args):
     """Process all MIDI files in a directory."""
-    pattern = '**/*.mid' if args.recursive else '*.mid'
-    
-    midi_files = list(dir_path.glob(pattern))
+    if args.recursive:
+        midi_files = list(dir_path.rglob('*.mid'))
+    else:
+        midi_files = list(dir_path.glob('*.mid'))
     
     if not midi_files:
         print(f"No MIDI files found in {dir_path}")
