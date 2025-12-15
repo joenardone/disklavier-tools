@@ -3,7 +3,7 @@
 
 a = Analysis(
     ['convert_midi_type.py'],
-    pathex=['c:\\Users\\josep\\OneDrive\\Documents\\Projects\\Disklavier'],
+    pathex=[],
     binaries=[],
     datas=[],
     hiddenimports=[],

@@ -36,12 +36,17 @@ def convert_to_type0(input_path, output_path=None, backup=True, force=False):
     try:
         mid = mido.MidiFile(input_path)
         
-        # Check if already Type 0
-        if mid.type == 0:
+        # Check if already Type 0 with exactly 1 track (properly formatted)
+        if mid.type == 0 and len(mid.tracks) == 1:
             return False
         
-        # Check for multiple tracks and warn
-        if len(mid.tracks) > 1 and not force:
+        # Handle malformed Type 0 files (declared as Type 0 but have multiple tracks)
+        if mid.type == 0 and len(mid.tracks) > 1:
+            print(f"⚠ Fixing malformed Type 0 file: {input_path.name} (has {len(mid.tracks)} tracks, should have 1)")
+            # Continue with conversion to properly merge tracks
+        
+        # Check for Type 1 multiple tracks and warn if not forcing
+        if mid.type == 1 and len(mid.tracks) > 1 and not force:
             print(f"⚠ Warning: {input_path} has {len(mid.tracks)} tracks")
             print(f"  Skipping to preserve track structure. Use --force to convert anyway.")
             return None
