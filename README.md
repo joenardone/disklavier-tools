@@ -169,6 +169,39 @@ mid_title_from_filename.exe --recursive directory
 mid_title_from_filename.exe --dry-run directory
 ```
 
+### repair_midi_key_signature.exe
+Repairs corrupted MIDI files with invalid key signature mode bytes.
+
+**Background:** Some MIDI files may have corrupted key signature meta messages where the mode byte is set to 255 (0xFF) instead of 0 (major) or 1 (minor). This causes standard MIDI libraries like mido to fail with errors like "Could not decode key with 2 flats and mode 255". This tool repairs the corruption at the byte level.
+
+**Features:**
+- Detects and repairs invalid key signature mode bytes
+- Works at byte level (doesn't require MIDI library parsing)
+- Creates repaired copies (original files preserved)
+- Supports single file or recursive directory processing
+- Reports all repairs made
+
+**Usage:**
+```powershell
+# Repair single file
+repair_midi_key_signature.exe corrupted.mid
+# Creates: corrupted_repaired.mid
+
+# Specify output filename
+repair_midi_key_signature.exe corrupted.mid fixed.mid
+
+# Repair all MIDI files in directory and subdirectories
+repair_midi_key_signature.exe . --recursive
+
+# Quiet mode (only show errors)
+repair_midi_key_signature.exe input.mid --quiet
+```
+
+**Note:** This tool is needed when you see errors like:
+- "Could not decode key with X flats and mode 255"
+- "KeySignatureError: mode 255"
+- MIDI files that won't load in standard players/tools
+
 ### clean_filenames.exe
 Cleans filenames by replacing Unicode characters and illegal characters with safe equivalents.
 

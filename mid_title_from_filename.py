@@ -27,18 +27,24 @@ def sanitize_title(title: str) -> str:
 
 
 def update_midi_title(midi_path: Path, dry_run: bool = False):
-    """Update a MIDI file's title metadata to match its filename (without extension)."""
+    """
+    Update a MIDI file's title metadata to match its filename (without extension).
+    
+    Returns:
+        (bool, str): (success, error_message if failed)
+    """
     try:
         # Validate it's a MIDI file
         mid = mido.MidiFile(midi_path)
     except Exception as e:
-        print(f"ERROR: {midi_path.name} is not a valid MIDI file: {e}")
-        return False
+        error_msg = f"Cannot load: {e}"
+        print(f"ERROR: {midi_path.name} - {error_msg}")
+        return False, error_msg
     
     # Check for type 0 with multiple tracks - this is invalid and cannot be saved
     if mid.type == 0 and len(mid.tracks) > 1:
         print(f"SKIP: {midi_path.name} (type 0 with {len(mid.tracks)} tracks - use convert_midi_type.exe to fix)")
-        return True  # Return True to not count as failure
+        return True, None  # Return True to not count as failure
     
     # Extract title from filename (without extension)
     new_title = midi_path.stem
@@ -55,7 +61,7 @@ def update_midi_title(midi_path: Path, dry_run: bool = False):
             old_title = msg.name
             if old_title == new_title:
                 print(f"SKIP: {midi_path.name} (title already matches)")
-                return True
+                return True, None
             
             if dry_run:
                 print(f"DRY RUN: {midi_path.name}: '{old_title}' -> '{new_title}'")
@@ -78,10 +84,11 @@ def update_midi_title(midi_path: Path, dry_run: bool = False):
         try:
             mid.save(midi_path)
         except Exception as e:
-            print(f"ERROR: Failed to save {midi_path.name}: {e}")
-            return False
+            error_msg = f"Cannot save: {e}"
+            print(f"ERROR: {midi_path.name} - {error_msg}")
+            return False, error_msg
     
-    return True
+    return True, None
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -128,22 +135,28 @@ def main(argv=None):
     
     # Process files
     success_count = 0
-    failed_files = []
+    failed_files = []  # List of (Path, error_message) tuples
     
     for fp in sorted(files):
-        if update_midi_title(fp, dry_run=args.dry_run):
+        success, error_msg = update_midi_title(fp, dry_run=args.dry_run)
+        if success:
             success_count += 1
         else:
-            failed_files.append(fp)
+            failed_files.append((fp, error_msg))
     
     # Summary
     print(f"\nProcessed {len(files)} file(s): {success_count} successful, {len(failed_files)} failed")
+    sys.stdout.flush()
     
     # Show failed files if any
     if failed_files:
         print(f"\nFailed files:")
-        for fp in failed_files:
-            print(f"  • {fp.name}")
+        sys.stdout.flush()
+        for fp, error_msg in failed_files:
+            print(f"  • {fp}")
+            if error_msg:
+                print(f"    {error_msg}")
+        sys.stdout.flush()
     
     return 0 if len(failed_files) == 0 else 1
 
