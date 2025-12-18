@@ -470,3 +470,159 @@ Each executable has a corresponding README.txt in the dist/ folder.
 - pillow (image processing for cover art tools)
 - python-rtmidi (optional, for MIDI playback)
 - pyinstaller (for building executables)
+
+## Utility Scripts
+
+PowerShell scripts for file management and collection maintenance (located in `dist/`):
+
+### Rename-Titlecase.ps1
+Normalizes MIDI filenames to consistent format with proper title case.
+
+**Features:**
+- Handles 7 different track numbering patterns (NNN-NNNN-Rest, NN-WNNNN, etc.)
+- Replaces underscores with spaces
+- Applies title case (first letter capitalized)
+- Lowercases file extensions
+- Case-sensitive change detection
+- Dynamic padding (2-digit for ≤99 files, 3-digit for 100+ files)
+- Interactive preview and confirmation
+
+**Usage:**
+```powershell
+# Process current directory
+.\Rename-Titlecase.ps1
+
+# Process specific directory
+.\Rename-Titlecase.ps1 -Path "\\RackStation\Music\Piano\MIDI"
+
+# Examples of transformations:
+# 01 - ANGEL_EYES.MID → 01 - Angel Eyes.mid
+# 054-PROKOFIEV SONATA → 54 - Prokofiev Sonata.mid
+# 310 Jazz Trio → 310 - Jazz Trio.mid
+```
+
+### Rename-FindReplace.ps1
+Flexible find/replace for patterns in MIDI filenames.
+
+**Features:**
+- Case-insensitive pattern matching
+- Handles special characters safely
+- Preview before execution
+- Conflict detection
+- Progress updates for large batches
+- Optional recursive processing
+
+**Usage:**
+```powershell
+# Remove middle names from filenames
+.\Rename-FindReplace.ps1 -Find "Frederic Francois" -Replace ""
+
+# Normalize opus notation
+.\Rename-FindReplace.ps1 -Find "Op.25" -Replace "Op-25"
+
+# Clean up punctuation
+.\Rename-FindReplace.ps1 -Find ", " -Replace " "
+
+# Process subdirectories
+.\Rename-FindReplace.ps1 -Find "text" -Replace "new" -Recurse
+
+# Custom file filter
+.\Rename-FindReplace.ps1 -Find "old" -Replace "new" -Filter "*.txt"
+```
+
+### Fix-Numbering.ps1
+Fixes track numbering in folders with 100+ files by converting to 3-digit padding.
+
+**Problem:** When folders have files numbered 01-99 (2-digit) and 100+ (3-digit), sorting breaks:
+```
+01 - Song.mid
+02 - Song.mid
+...
+100 - Song.mid  ← sorts after 99, but displays wrong
+10 - Song.mid   ← actually sorts here!
+```
+
+**Solution:** Renumbers ALL files to use 3-digit padding (001, 002, ..., 100):
+```
+001 - Song.mid
+002 - Song.mid
+...
+010 - Song.mid
+...
+100 - Song.mid
+```
+
+**Features:**
+- Automatically detects folders with 100+ files
+- Renumbers only affected folders (leaves smaller folders with 2-digit padding)
+- Preview before execution
+- Tracks success/error counts
+- Supports recursive processing
+
+**Usage:**
+```powershell
+# Fix single directory
+.\Fix-Numbering.ps1 -Path "Albums\Composer Name"
+
+# Fix all subdirectories with 100+ files
+.\Fix-Numbering.ps1 -Path "\\RackStation\Music\Piano\MIDI" -Recurse
+```
+
+**Recommended Workflow After Renumbering:**
+```powershell
+# 1. Fix numbering in folders with 100+ files
+.\Fix-Numbering.ps1 -Path "\\RackStation\Music\Piano\MIDI" -Recurse
+
+# 2. Update MIDI metadata to match new filenames
+..\embed_tags_metadata.exe --default --add-xf-metadata --recursive "\\RackStation\Music\Piano\MIDI"
+```
+
+## Python Analysis Scripts
+
+Analysis tools for MIDI collection management (located in root):
+
+### analyze_collection.py
+Comprehensive MIDI collection analysis for quality checking and duplicate detection.
+
+**Features:**
+- MD5 hash-based exact duplicate detection
+- Similar filename detection (same name, different folders)
+- Type 1 file identification (need conversion to Type 0)
+- Missing XF metadata detection
+- Short file detection (<30 seconds)
+- Files-by-folder breakdown with recommendations
+
+**Usage:**
+```bash
+python analyze_collection.py "\\RackStation\Music\Piano\MIDI"
+```
+
+### find_duplicates_fuzzy.py
+Finds duplicate MIDI files across folders using fuzzy filename matching.
+
+**Features:**
+- Normalizes track numbers (01 - or NNN -)
+- Normalizes punctuation (Op.25 → Op-25, No.1 → No-1)
+- Removes composer middle names
+- Verifies matches with MIDI stats (note count, duration)
+- Provides removal recommendations
+
+**Usage:**
+```bash
+python find_duplicates_fuzzy.py "\\RackStation\Music\Piano\MIDI"
+```
+
+### tools/analyze_midi_tags.py
+Detailed metadata analysis tool for understanding MIDI structure.
+
+**Features:**
+- Categorizes messages: standard_midi, xf_markers, xg_markers, text_metadata
+- Displays hex values with plain English explanations
+- Checks for multiple track_names (causes display issues)
+- Provides DKC-900 display predictions
+- XF format marker decoding (XF02 version identification)
+
+**Usage:**
+```bash
+python tools/analyze_midi_tags.py "samples/song.mid"
+```

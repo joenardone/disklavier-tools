@@ -149,9 +149,9 @@ def main():
         help='Year for copyright (default: current year)'
     )
     parser.add_argument(
-        '--no-recursive',
+        '--recursive',
         action='store_true',
-        help='Do not scan subdirectories'
+        help='Scan subdirectories'
     )
     
     args = parser.parse_args()
@@ -163,7 +163,7 @@ def main():
         add_smfsolo_metadata(path, year=args.year)
     elif path.is_dir():
         # Process directory
-        process_directory(path, recursive=not args.no_recursive, year=args.year)
+        process_directory(path, recursive=args.recursive, year=args.year)
     else:
         print(f"Error: Path not found: {path}", file=sys.stderr)
         sys.exit(1)

@@ -310,9 +310,9 @@ def main():
         help='Directory to scan (default: current directory)'
     )
     parser.add_argument(
-        '--no-recursive',
+        '--recursive',
         action='store_true',
-        help='Do not scan subdirectories'
+        help='Scan subdirectories'
     )
     parser.add_argument(
         '--add-metadata',
@@ -338,13 +338,13 @@ def main():
     if args.add_metadata or args.dry_run:
         add_metadata_to_files(
             args.directory,
-            recursive=not args.no_recursive,
+            recursive=args.recursive,
             artist=args.artist,
             year=args.year,
             dry_run=args.dry_run
         )
     else:
-        results = scan_directory(args.directory, recursive=not args.no_recursive)
+        results = scan_directory(args.directory, recursive=args.recursive)
         print_results(results)
 
 

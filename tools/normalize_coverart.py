@@ -139,8 +139,8 @@ Examples:
   # Custom size (e.g., for other devices)
   normalize_coverart.exe --size 300 Albums
   
-  # Don't recurse into subdirectories
-  normalize_coverart.exe --no-recursive Albums
+  # Recurse into subdirectories
+  normalize_coverart.exe --recursive Albums
 
 Note: Original images are backed up as cover.original.jpg
         """
@@ -150,8 +150,8 @@ Note: Original images are backed up as cover.original.jpg
                        help='target size in pixels (square: SIZExSIZE, default: 265)')
     parser.add_argument('--quality', type=int, default=88,
                        help='JPEG quality 1-100 (default: 88)')
-    parser.add_argument('--no-recursive', action='store_true',
-                       help='do not process subdirectories')
+    parser.add_argument('--recursive', action='store_true',
+                       help='process subdirectories')
     parser.add_argument('--dry-run', action='store_true',
                        help='preview changes without modifying files')
     
@@ -171,7 +171,7 @@ Note: Original images are backed up as cover.original.jpg
             size=args.size,
             quality=args.quality,
             dry_run=args.dry_run,
-            recursive=not args.no_recursive
+            recursive=args.recursive
         )
     except KeyboardInterrupt:
         print("\n\nInterrupted by user.")

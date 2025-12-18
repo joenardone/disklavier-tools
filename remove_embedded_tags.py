@@ -130,9 +130,9 @@ def main():
         help='MIDI file or directory to process (default: current directory)'
     )
     parser.add_argument(
-        '--no-recursive',
+        '--recursive',
         action='store_true',
-        help='Do not scan subdirectories'
+        help='Scan subdirectories'
     )
     parser.add_argument(
         '--dry-run',
@@ -160,7 +160,7 @@ def main():
     
     elif path.is_dir():
         # Process directory
-        process_directory(path, recursive=not args.no_recursive, dry_run=args.dry_run)
+        process_directory(path, recursive=args.recursive, dry_run=args.dry_run)
     else:
         print(f"Error: Path not found: {path}", file=sys.stderr)
         sys.exit(1)

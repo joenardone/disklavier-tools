@@ -13,6 +13,113 @@ import argparse
 import re
 
 
+def parse_filename_metadata(midi_path, auto_track_number=None, keep_full_filename=False):
+    """
+    Parse metadata from filename pattern: NN_title.mid or N-NN_title.mid or NNN_title.mid or NNN-title.mid
+    
+    Args:
+        midi_path: Path to MIDI file
+        auto_track_number: If provided, use this track number for files without a track prefix
+        keep_full_filename: If True, use full filename as title (for DKC-900 display with track number)
+    
+    Returns:
+        dict with parsed metadata including:
+        - TIT2: Song title (from filename)
+        - TALB: Album name (from parent directory)
+        - TRCK: Track number (from filename prefix or auto-assigned)
+        - Disc number if present in N-NN format
+    """
+    path = Path(midi_path)
+    filename = path.stem
+    
+    tags = {}
+    
+    # If keep_full_filename is True, use entire filename as title but still parse track number
+    if keep_full_filename:
+        # Still need to extract track number for TRCK tag
+        # Parse track number prefix patterns:
+        disc_track_pattern = r'^(\d+)-(\d{2,3})[-_]'
+        simple_underscore = r'^(\d{2,3})_'
+        simple_hyphen = r'^(\d{2,3})-'
+        
+        disc_match = re.match(disc_track_pattern, filename)
+        underscore_match = re.match(simple_underscore, filename)
+        hyphen_match = re.match(simple_hyphen, filename)
+        
+        if disc_match:
+            track_num = disc_match.group(2)
+            tags['TRCK'] = f"{int(track_num)}"
+        elif underscore_match:
+            track_num = underscore_match.group(1)
+            tags['TRCK'] = f"{int(track_num)}"
+        elif hyphen_match:
+            track_num = hyphen_match.group(1)
+            tags['TRCK'] = f"{int(track_num)}"
+        else:
+            tags['TRCK'] = str(auto_track_number) if auto_track_number else '1'
+        
+        # Use full filename as title (replace underscores with spaces)
+        title = filename.replace('_', ' ').strip()
+        tags['TIT2'] = title
+    else:
+        # Original behavior: extract title without track prefix
+        # Parse track number prefix patterns:
+        # NN_ or NNN_ (e.g., "01_Song.mid" or "001_Song.mid")
+        # NN- or NNN- (e.g., "036-2004-Song.mid")
+        # N-NN_ (disc-track format, e.g., "1-05_Song.mid")
+        
+        # Try disc-track format first: N-NN_title
+        disc_track_pattern = r'^(\d+)-(\d{2,3})[-_](.+)$'
+        disc_match = re.match(disc_track_pattern, filename)
+        
+        # Try simple track with underscore: NN_title or NNN_title
+        simple_underscore = r'^(\d{2,3})_(.+)$'
+        underscore_match = re.match(simple_underscore, filename)
+        
+        # Try simple track with hyphen: NN-title or NNN-title
+        simple_hyphen = r'^(\d{2,3})-(.+)$'
+        hyphen_match = re.match(simple_hyphen, filename)
+        
+        if disc_match:
+            # Format: N-NN_title or N-NN-title
+            disc_num = disc_match.group(1)
+            track_num = disc_match.group(2)
+            title = disc_match.group(3)
+            tags['TRCK'] = f"{int(track_num)}"  # Store as track number
+            # Could store disc info in TPOS tag if needed
+        elif underscore_match:
+            # Format: NN_title or NNN_title
+            track_num = underscore_match.group(1)
+            title = underscore_match.group(2)
+            tags['TRCK'] = f"{int(track_num)}"  # Remove leading zeros
+        elif hyphen_match:
+            # Format: NN-title or NNN-title
+            track_num = hyphen_match.group(1)
+            title = hyphen_match.group(2)
+            tags['TRCK'] = f"{int(track_num)}"  # Remove leading zeros
+        else:
+            # No track number prefix, use auto-assigned number or 1
+            title = filename
+            tags['TRCK'] = str(auto_track_number) if auto_track_number else '1'
+        
+        # Clean up title (replace underscores with spaces)
+        title = title.replace('_', ' ').strip()
+        tags['TIT2'] = title
+    
+    # Album name from parent directory
+    album_name = path.parent.name
+    tags['TALB'] = album_name
+    
+    # Set empty but present fields
+    tags['TPE1'] = ''  # Artist
+    tags['TCOM'] = ''  # Composer
+    tags['TYER'] = ''  # Year
+    tags['COMM'] = ''  # Catalog
+    tags['TCON'] = ''  # Genre
+    
+    return tags
+
+
 def parse_tags_file(tags_path):
     """
     Parse PFBU .tags.txt file.
@@ -59,7 +166,7 @@ def clean_genre(genre):
     return genre
 
 
-def embed_tags_in_midi(midi_path, tags, output_path=None, add_xf_metadata=False):
+def embed_tags_in_midi(midi_path, tags, output_path=None, add_xf_metadata=False, force=False):
     """
     Embed metadata from tags into MIDI file.
     
@@ -68,6 +175,7 @@ def embed_tags_in_midi(midi_path, tags, output_path=None, add_xf_metadata=False)
         tags: Dict of parsed tags
         output_path: Path for output file (default: overwrite input)
         add_xf_metadata: If True, also add XF Solo metadata
+        force: If True, always write even if metadata matches existing
     
     Returns:
         dict with status: {'modified': bool, 'reason': str}
@@ -81,17 +189,38 @@ def embed_tags_in_midi(midi_path, tags, output_path=None, add_xf_metadata=False)
         
         track = mid.tracks[0]
         
-        # Find insertion point (after initial meta messages like tempo, time_sig)
+        # Find ALL track_names in the entire file and remove duplicates
+        # We need to: 1) Update the first track_name, 2) Remove ALL subsequent track_names
         insert_pos = 0
+        first_track_name_idx = None
+        track_names_to_remove = []
+        
+        # First pass: find all track_names throughout the entire track
+        for i, msg in enumerate(track):
+            if msg.is_meta and msg.type == 'track_name':
+                if first_track_name_idx is None:
+                    # This is the first track_name - we'll update it
+                    first_track_name_idx = i
+                else:
+                    # This is a duplicate track_name anywhere in the file - mark for removal
+                    track_names_to_remove.append(i)
+        
+        # Remove ALL duplicate track_names (in reverse order to preserve indices)
+        needs_update = False
+        for idx in reversed(track_names_to_remove):
+            track.pop(idx)
+            needs_update = True
+        
+        # Second pass: find insertion point and update first track_name
         for i, msg in enumerate(track):
             if msg.type in ['set_tempo', 'time_signature', 'key_signature']:
                 insert_pos = i + 1
             elif msg.is_meta and msg.type == 'track_name':
-                # Replace existing track_name
-                if 'TIT2' in tags:
+                # Update the first (and now only) track_name
+                if 'TIT2' in tags and msg.name != tags['TIT2']:
                     msg.name = tags['TIT2']
+                    needs_update = True
                 insert_pos = i + 1
-            else:
                 break
         
         # Scan existing text messages to check what's already there
@@ -107,7 +236,7 @@ def embed_tags_in_midi(midi_path, tags, output_path=None, add_xf_metadata=False)
         # Build list of new metadata messages and track changes
         new_messages = []
         messages_to_remove = []
-        needs_update = False
+        # needs_update already set above if we removed duplicate track_names
         
         # Track name (title)
         if 'TIT2' in tags:
@@ -206,8 +335,8 @@ def embed_tags_in_midi(midi_path, tags, output_path=None, add_xf_metadata=False)
                 
                 needs_update = True
         
-        # If no changes needed, skip
-        if not needs_update:
+        # If no changes needed, skip (unless force is True)
+        if not needs_update and not force:
             return {'modified': False, 'reason': 'already has matching metadata'}
         
         # Insert new messages
@@ -227,7 +356,7 @@ def embed_tags_in_midi(midi_path, tags, output_path=None, add_xf_metadata=False)
         return {'modified': False, 'reason': f'error: {e}'}
 
 
-def process_directory(directory, recursive=True, add_xf_metadata=False, dry_run=False):
+def process_directory(directory, recursive=True, add_xf_metadata=False, dry_run=False, use_defaults=False):
     """Process all MIDI files with corresponding .tags.txt files in directory."""
     directory = Path(directory)
     
@@ -238,12 +367,36 @@ def process_directory(directory, recursive=True, add_xf_metadata=False, dry_run=
     # Find all .tags.txt files
     if recursive:
         tags_files = list(directory.rglob('*.tags.txt'))
+        if use_defaults:
+            midi_files = list(directory.rglob('*.mid'))
     else:
         tags_files = list(directory.glob('*.tags.txt'))
+        if use_defaults:
+            midi_files = list(directory.glob('*.mid'))
     
-    if not tags_files:
+    if not use_defaults and not tags_files:
         print(f"No .tags.txt files found in {directory}")
         return
+    
+    if use_defaults:
+        # Build set of MIDI files that already have tags
+        midi_with_tags = set()
+        for tags_file in tags_files:
+            base_name = tags_file.name.replace('.tags.txt', '')
+            midi_file = tags_file.parent / f"{base_name}.mid"
+            midi_with_tags.add(midi_file)
+        
+        # Filter to only MIDI files without tags
+        midi_without_tags = [f for f in midi_files if f not in midi_with_tags]
+        
+        print(f"Found {len(tags_files)} .tags.txt file(s)")
+        if midi_without_tags:
+            print(f"Found {len(midi_without_tags)} .mid file(s) without .tags.txt (will use defaults)")
+        print()
+    else:
+        if not tags_files:
+            print(f"No .tags.txt files found in {directory}")
+            return
     
     print(f"Found {len(tags_files)} .tags.txt file(s)\n")
     
@@ -314,6 +467,52 @@ def process_directory(directory, recursive=True, add_xf_metadata=False, dry_run=
         
         print()
     
+    # Process MIDI files without tags if --default is active
+    if use_defaults and 'midi_without_tags' in locals():
+        # Group files by directory to assign sequential track numbers within each album
+        from collections import defaultdict
+        files_by_dir = defaultdict(list)
+        for midi_file in sorted(midi_without_tags):
+            files_by_dir[midi_file.parent].append(midi_file)
+        
+        for directory, files in sorted(files_by_dir.items()):
+            auto_track = 1  # Start track numbering at 1 for each directory
+            
+            for midi_file in sorted(files):
+                print(f"Processing (default): {midi_file.name}")
+                
+                # Generate default tags from filename, with auto track number
+                # Use keep_full_filename=True so DKC-900 displays track number in title
+                tags = parse_filename_metadata(midi_file, auto_track_number=auto_track, keep_full_filename=True)
+                
+                print(f"  Title: {tags['TIT2']}")
+                print(f"  Album: {tags['TALB']}")
+                print(f"  Track: {tags['TRCK']}")
+                
+                # Only increment auto track number if file didn't have a track prefix
+                # (parse_filename_metadata returns the auto_track_number we passed if no prefix found)
+                if tags['TRCK'] == str(auto_track):
+                    auto_track += 1
+                
+                if dry_run:
+                    print(f"  [DRY RUN] Would embed default metadata")
+                    processed_count += 1
+                else:
+                    # Only write if metadata doesn't match existing
+                    result = embed_tags_in_midi(midi_file, tags, add_xf_metadata=add_xf_metadata)
+                    if result['modified']:
+                        print(f"  ✓ Embedded default metadata")
+                        processed_count += 1
+                    elif result['reason'] == 'already has matching metadata':
+                        print(f"  ⊙ Skipped (already has matching metadata)")
+                        skipped_count += 1
+                    else:
+                        error_msg = result['reason']
+                        print(f"  ✗ Error: {error_msg}")
+                        error_details.append(f"{midi_file.name}: {error_msg}")
+                        error_count += 1
+                print()
+    
     print(f"Summary:")
     print(f"  {'Would process' if dry_run else 'Processed'}: {processed_count}")
     print(f"  Skipped (already has metadata): {skipped_count}")
@@ -341,14 +540,19 @@ def main():
         help='Also add XF Solo metadata for DKC-900 recognition'
     )
     parser.add_argument(
-        '--no-recursive',
+        '--recursive',
         action='store_true',
-        help='Do not scan subdirectories'
+        help='Scan subdirectories'
     )
     parser.add_argument(
         '--dry-run',
         action='store_true',
         help='Preview changes without modifying files'
+    )
+    parser.add_argument(
+        '--default',
+        action='store_true',
+        help='Generate default metadata from filename/directory for MIDI files without .tags.txt'
     )
     
     args = parser.parse_args()
@@ -391,13 +595,18 @@ def main():
             # Look for corresponding .tags.txt file
             tags_file = path.parent / f"{path.stem}.tags.txt"
             if not tags_file.exists():
-                print(f"Error: No corresponding .tags.txt file found: {tags_file}", file=sys.stderr)
-                sys.exit(1)
-            
-            tags = parse_tags_file(tags_file)
-            if not tags:
-                print(f"Error: Could not parse {tags_file}", file=sys.stderr)
-                sys.exit(1)
+                if not args.default:
+                    print(f"Error: No corresponding .tags.txt file found: {tags_file}", file=sys.stderr)
+                    sys.exit(1)
+                else:
+                    # Generate default tags from filename
+                    print(f"No .tags.txt found, using defaults from filename")
+                    tags = parse_filename_metadata(path)
+            else:
+                tags = parse_tags_file(tags_file)
+                if not tags:
+                    print(f"Error: Could not parse {tags_file}", file=sys.stderr)
+                    sys.exit(1)
             
             print(f"Processing: {path.name}")
             for key, value in tags.items():
@@ -422,8 +631,9 @@ def main():
     
     elif path.is_dir():
         # Process directory
-        process_directory(path, recursive=not args.no_recursive, 
-                         add_xf_metadata=args.add_xf_metadata, dry_run=args.dry_run)
+        process_directory(path, recursive=args.recursive, 
+                         add_xf_metadata=args.add_xf_metadata, dry_run=args.dry_run,
+                         use_defaults=args.default)
     else:
         print(f"Error: Path not found: {path}", file=sys.stderr)
         sys.exit(1)
